@@ -25,12 +25,6 @@ pub struct Connection {
     pool_handle: ConnectionHandle,
 }
 
-impl Drop for Connection {
-    fn drop(&mut self) {
-        self.close();
-    }
-}
-
 impl Connection {
     pub(crate) fn new(quic_conn: quinn::Connection, pool_handle: ConnectionHandle) -> Self {
         Self {
