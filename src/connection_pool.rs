@@ -80,6 +80,10 @@ impl ConnectionHandle {
         let mut store = self.store.lock().unwrap();
         let _ = store.map.remove(&self.key);
     }
+
+    pub fn remote_addr(&self) -> &SocketAddr {
+        &self.key.addr
+    }
 }
 
 #[derive(Default)]

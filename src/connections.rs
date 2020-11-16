@@ -153,14 +153,9 @@ impl IncomingConnections {
                 }) => {
                     let pool_handle = self
                         .connection_pool
-                        .insert(connection.remote_address(), connection.clone());
+                        .insert(connection.remote_address(), connection);
 
-                    Some(IncomingMessages::new(
-                        connection.remote_address(),
-                        uni_streams,
-                        bi_streams,
-                        pool_handle,
-                    ))
+                    Some(IncomingMessages::new(uni_streams, bi_streams, pool_handle))
                 }
                 Err(_err) => None,
             },
@@ -171,7 +166,6 @@ impl IncomingConnections {
 
 /// Stream of incoming QUIC messages
 pub struct IncomingMessages {
-    peer_addr: SocketAddr,
     uni_streams: quinn::IncomingUniStreams,
     bi_streams: quinn::IncomingBiStreams,
     pool_handle: ConnectionHandle,
@@ -179,13 +173,11 @@ pub struct IncomingMessages {
 
 impl IncomingMessages {
     pub(crate) fn new(
-        peer_addr: SocketAddr,
         uni_streams: quinn::IncomingUniStreams,
         bi_streams: quinn::IncomingBiStreams,
         pool_handle: ConnectionHandle,
     ) -> Self {
         Self {
-            peer_addr,
             uni_streams,
             bi_streams,
             pool_handle,
@@ -194,7 +186,7 @@ impl IncomingMessages {
 
     /// Returns the address of the peer who initiated the connection
     pub fn remote_addr(&self) -> SocketAddr {
-        self.peer_addr
+        *self.pool_handle.remote_addr()
     }
 
     /// Returns next message sent by the peer on current QUIC connection,
@@ -202,7 +194,7 @@ impl IncomingMessages {
     pub async fn next(&mut self) -> Option<Message> {
         // Each stream initiated by the remote peer constitutes a new message.
         // Read the next message available in any of the two type of streams.
-        let src = self.peer_addr;
+        let src = self.remote_addr();
         select! {
             next_uni = Self::next_on_uni_streams(&mut self.uni_streams) =>
                 next_uni.map(|(bytes, recv)| Message::UniStream {
@@ -210,7 +202,7 @@ impl IncomingMessages {
                     src,
                     recv: RecvStream::new(recv)
                 }),
-            next_bi = Self::next_on_bi_streams(&mut self.bi_streams, self.peer_addr) =>
+            next_bi = Self::next_on_bi_streams(&mut self.bi_streams, src) =>
                 next_bi.map(|(bytes, send, recv)| Message::BiStream {
                     bytes,
                     src,
