@@ -148,7 +148,7 @@ impl QuicP2p {
             .unwrap_or(DEFAULT_KEEP_ALIVE_INTERVAL_MSEC);
 
         let (key, cert) = {
-            let our_complete_cert: SerialisableCertificate = Default::default();
+            let our_complete_cert = SerialisableCertificate::new(vec!["MaidSAFE.net".to_string()])?;
             our_complete_cert.obtain_priv_key_and_cert()?
         };
 

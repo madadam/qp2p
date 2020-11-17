@@ -57,7 +57,7 @@ async fn main() -> Result<(), Error> {
             );
             println!("Enter message:");
             let input = read_from_stdin().await;
-            send.send_user_msg(Bytes::from(input)).await.unwrap();
+            send.send_user_msg(Bytes::from(input)).await?;
             bytes = recv.next().await?;
         }
     } else {
