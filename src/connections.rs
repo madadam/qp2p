@@ -106,8 +106,7 @@ impl Connection {
     /// Gracefully close connection immediatelly
     pub fn close(&self) {
         self.quic_conn.close(0u32.into(), b"");
-        // TODO: uncomment
-        // self.pool_handle.remove();
+        self.pool_handle.remove();
     }
 
     fn handle_error<T, E>(&self, result: Result<T, E>) -> Result<T, E> {
